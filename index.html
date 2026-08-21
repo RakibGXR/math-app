@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Math Topics Tracker</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#4A90E2">
+    <style>
+        :root {
+            --primary: #4A90E2;
+            --bg: #F4F7F6;
+            --card-bg: #FFFFFF;
+            --text: #333333;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background-color: var(--bg); color: var(--text); padding: 20px; display: flex; justify-content: center; }
+        .container { max-width: 500px; width: 100%; }
+        header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .lang-btn { background: var(--primary); color: white; border: none; padding: 8px 16px; border-radius: 20px; cursor: pointer; font-weight: bold; }
+        .stats { background: var(--card-bg); padding: 15px; border-radius: 10px; text-align: center; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        .progress-bar { width: 100%; background: #e0e0e0; border-radius: 10px; height: 10px; margin-top: 10px; overflow: hidden; }
+        .progress { height: 100%; background: var(--primary); width: 0%; transition: width 0.3s; }
+        .card { background: var(--card-bg); padding: 30px 20px; border-radius: 10px; text-align: center; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 20px; }
+        .topic-display { font-size: 22px; font-weight: bold; margin: 20px 0; min-height: 60px; color: #2c3e50; }
+        .btn { background: var(--primary); color: white; border: none; padding: 12px 20px; font-size: 16px; border-radius: 8px; cursor: pointer; width: 100%; transition: 0.2s; }
+        .btn:hover { background: #357ABD; }
+        .btn:disabled { background: #cccccc; cursor: not-allowed; }
+        .btn-success { background: #27ae60; margin-top: 15px; }
+        .btn-success:hover { background: #219653; }
+        .reset-btn { background: #e74c3c; margin-top: 20px; }
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h2 id="app-title">Math Tracker</h2>
+        <button class="lang-btn" onclick="toggleLang()" id="lang-toggle">English</button>
+    </header>
+
+    <div class="stats">
+        <h3 id="stat-text">সম্পন্ন হয়েছে: 0 / 60</h3>
+        <div class="progress-bar"><div class="progress" id="progress-bar"></div></div>
+    </div>
+
+    <div class="card">
+        <button class="btn" id="generate-btn" onclick="generateTopic()">আজকের টপিক দেখুন</button>
+        
+        <div id="topic-container" class="hidden">
+            <div class="topic-display" id="topic-text"></div>
+            <button class="btn btn-success" id="done-btn" onclick="markAsDone()">পড়া সম্পন্ন হয়েছে ✓</button>
+        </div>
+        <p id="all-done-msg" class="hidden" style="color: #27ae60; font-weight: bold; margin-top: 20px;">অভিনন্দন! আপনি সবগুলো টপিক শেষ করেছেন!</p>
+    </div>
+
+    <button class="btn reset-btn" onclick="resetProgress()" id="reset-btn">রিসেট করুন (Reset)</button>
+</div>
+
+<script>
+    // ৬০ টি টপিকের ডেটাবেস
+    const topics = [
+        { id: 1, bn: "বাস্তব সংখ্যা", en: "Real Numbers" },
+        { id: 2, bn: "সেট ও ফাংশন", en: "Set and Function" },
+        { id: 3, bn: "বীজগাণিতিক রাশি", en: "Algebraic Expressions" },
+        { id: 4, bn: "সূচক ও লগারিদম", en: "Exponents and Logarithms" },
+        { id: 5, bn: "এক চলকবিশিষ্ট সমীকরণ", en: "Equations in One Variable" },
+        { id: 6, bn: "দুই চলকবিশিষ্ট সরল সহসমীকরণ", en: "System of Linear Equations in Two Variables" },
+        { id: 7, bn: "অসমানতা বা অসমতা", en: "Inequalities" },
+        { id: 8, bn: "সমান্তর ও গুণোত্তর ধারা", en: "Arithmetic and Geometric Sequences/Series" },
+        { id: 9, bn: "অনুপাত, সমানুপাত ও দ্বিপদী বিস্তৃতি", en: "Ratio, Proportion & Binomial Expansion" },
+        { id: 10, bn: "ম্যাট্রিক্স ও নির্ণায়ক", en: "Matrices and Determinants" },
+        { id: 11, bn: "বহুপদী ও বহুপদী সমীকরণ", en: "Polynomials and Polynomial Equations" },
+        { id: 12, bn: "জটিল সংখ্যা", en: "Complex Numbers" },
+        { id: 13, bn: "রৈখিক প্রোগ্রামিং", en: "Linear Programming" },
+        { id: 14, bn: "বিন্যাস ও সমাবেশ", en: "Permutation and Combination" },
+        { id: 15, bn: "আংশিক ভগ্নাংশ", en: "Partial Fractions" },
+        { id: 16, bn: "বহুপদী সূচকীয় ও লগারিদমীয় ধারা", en: "Exponential and Logarithmic Series" },
+        { id: 17, bn: "দ্বিপদী উপপাদ্য", en: "Binomial Theorem" },
+        { id: 18, bn: "জ্যামিতিক পরিমাপ ও কোণ", en: "Geometric Angles and Measurements" },
+        { id: 19, bn: "রেখা, কোণ ও ত্রিভুজ", en: "Lines, Angles, and Triangles" },
+        { id: 20, bn: "চতুর্ভুজ ও বহুভুজ", en: "Quadrilaterals and Polygons" },
+        { id: 21, bn: "বৃত্ত", en: "Circle" },
+        { id: 22, bn: "বৃত্ত সংক্রান্ত উপপাদ্য ও সম্পাদ্য", en: "Circle Theorems and Constructions" },
+        { id: 23, bn: "স্থানাঙ্ক জ্যামিতি", en: "Coordinate Geometry / Analytic Geometry" },
+        { id: 24, bn: "সরলরেখা", en: "Straight Lines" },
+        { id: 25, bn: "কণিক: পরাবৃত্ত, উপবৃত্ত ও অধিবৃত্ত", en: "Conics: Parabola, Ellipse, Hyperbola" },
+        { id: 26, bn: "ত্রিমাত্রিক স্থানাঙ্ক জ্যামিতি", en: "Three Dimensional Coordinate Geometry" },
+        { id: 27, bn: "ভেক্টর জ্যামিতি", en: "Vector Geometry" },
+        { id: 28, bn: "সমতলীয় ভেক্টর", en: "Plannar Vectors" },
+        { id: 29, bn: "অনুপাত ও সদৃশতা", en: "Ratio and Similarity in Geometry" },
+        { id: 30, bn: "পিথাগোরাসের উপপাদ্য ও বিস্তার", en: "Pythagorean Theorem & Extensions" },
+        { id: 31, bn: "ত্রিকোণমিতিক অনুপাত", en: "Trigonometric Ratios" },
+        { id: 32, bn: "দূরত্ব ও উচ্চতা", en: "Distances and Heights" },
+        { id: 33, bn: "ত্রিকোণমিতিক অভেদাবলী ও সমীকরণ", en: "Trigonometric Identities and Equations" },
+        { id: 34, bn: "সংযুক্ত ও যৌগিক কোণের ত্রিকোণমিতিক অনুপাত", en: "Compound & Multiple Angles" },
+        { id: 35, bn: "বিপরীত ত্রিকোণমিতিক ফাংশন", en: "Inverse Trigonometric Functions" },
+        { id: 36, bn: "ত্রিভুজের ধর্ম ও সমাধান", en: "Properties and Solution of Triangles" },
+        { id: 37, bn: "পরিমিতি: সমতলীয় ক্ষেত্রফল", en: "Mensuration: Plane Figures" },
+        { id: 38, bn: "ঘন জ্যামিতি ও ঘনবস্তু", en: "Solid Geometry & 3D Solids" },
+        { id: 39, bn: "প্রক্ষেপ ও বৃত্তীয় পরিমাপ", en: "Projections & Circular Measures" },
+        { id: 40, bn: "সীমা ও অবিচ্ছিন্নতা", en: "Limits and Continuity" },
+        { id: 41, bn: "অন্তরীকরণ / ব্যবকলন", en: "Differentiation / Derivatives" },
+        { id: 42, bn: "পর্যায়ক্রমিক অন্তরীকরণ", en: "Successive Differentiation" },
+        { id: 43, bn: "স্পর্শক ও অভিলম্ব", en: "Tangents and Normals" },
+        { id: 44, bn: "গুরুমান ও লঘুমান", en: "Maxima and Minima" },
+        { id: 45, bn: "সমাকলন / যোগজীকরণ", en: "Integration" },
+        { id: 46, bn: "নির্দিষ্ট যোগজ ও ক্ষেত্রফল নির্ণয়", en: "Definite Integrals & Area Computation" },
+        { id: 47, bn: "সমাকলনের প্রয়োগ", en: "Applications of Integration" },
+        { id: 48, bn: "বলবিদ্যা: সমতলীয় বলবিদ্যার মৌলিক ধারণা", en: "Statics Basics" },
+        { id: 49, bn: "সমবিন্দু বলসমূহের সাম্যাবস্থা", en: "Equilibrium of Coplanar Forces" },
+        { id: 50, bn: "সমান্তরাল বল ও যুগল", en: "Parallel Forces and Couples" },
+        { id: 51, bn: "গতিবিদ্যা: সমতলে বস্তুকণার গতি", en: "Dynamics: Motion in a Plane" },
+        { id: 52, bn: "প্রক্ষেপক বা প্রজেক্টাইল", en: "Projectiles" },
+        { id: 53, bn: "নিউটনের গতির সূত্রাবলি ও প্রয়োগ", en: "Newton's Laws of Motion" },
+        { id: 54, bn: "কাজ, শক্তি ও ক্ষমতা সংক্রান্ত গণিত", en: "Work, Energy & Power" },
+        { id: 55, bn: "পরিসংখ্যান: কেন্দ্রীয় প্রবণতার পরিমাপ", en: "Measures of Central Tendency" },
+        { id: 56, bn: "বিস্তার পরিমাপ ও তরঙ্গতা", en: "Measures of Dispersion" },
+        { id: 57, bn: "গড় ব্যবধান ও পরিমিত ব্যবধান", en: "Mean Deviation & Standard Deviation" },
+        { id: 58, bn: "সম্ভাবনা", en: "Probability" },
+        { id: 59, bn: "সম্ভাবনার বিন্যাস", en: "Probability Distribution" },
+        { id: 60, bn: "তথ্য উপস্থাপন ও উপাত্ত প্রক্রিয়াকরণ", en: "Data Representation & Processing" }
+    ];
+
+    const translations = {
+        bn: {
+            title: "গণিত ট্র্যাকার", btnLang: "English", 
+            stat: "সম্পন্ন হয়েছে:", generateBtn: "আজকের টপিক দেখুন", 
+            doneBtn: "পড়া সম্পন্ন হয়েছে ✓", resetBtn: "রিসেট করুন (Reset)",
+            congrats: "অভিনন্দন! আপনি সবগুলো টপিক শেষ করেছেন!"
+        },
+        en: {
+            title: "Math Tracker", btnLang: "বাংলা", 
+            stat: "Completed:", generateBtn: "Get Today's Topic", 
+            doneBtn: "Mark as Done ✓", resetBtn: "Reset Progress",
+            congrats: "Congratulations! You have completed all topics!"
+        }
+    };
+
+    let currentLang = localStorage.getItem('math_lang') || 'bn';
+    let completedTopics = JSON.parse(localStorage.getItem('math_completed')) || [];
+    let activeTopicId = JSON.parse(localStorage.getItem('math_active_topic')) || null;
+
+    function init() {
+        updateUI();
+        if (activeTopicId && !completedTopics.includes(activeTopicId)) {
+            showTopic(activeTopicId);
+        }
+    }
+
+    function toggleLang() {
+        currentLang = currentLang === 'bn' ? 'en' : 'bn';
+        localStorage.setItem('math_lang', currentLang);
+        updateUI();
+        if (activeTopicId && !completedTopics.includes(activeTopicId)) showTopic(activeTopicId);
+    }
+
+    function updateUI() {
+        const t = translations[currentLang];
+        document.getElementById('app-title').innerText = t.title;
+        document.getElementById('lang-toggle').innerText = t.btnLang;
+        document.getElementById('stat-text').innerText = `${t.stat} ${completedTopics.length} / 60`;
+        document.getElementById('generate-btn').innerText = t.generateBtn;
+        document.getElementById('done-btn').innerText = t.doneBtn;
+        document.getElementById('reset-btn').innerText = t.resetBtn;
+        document.getElementById('all-done-msg').innerText = t.congrats;
+        
+        let progressPercent = (completedTopics.length / 60) * 100;
+        document.getElementById('progress-bar').style.width = `${progressPercent}%`;
+
+        if (completedTopics.length === 60) {
+            document.getElementById('generate-btn').classList.add('hidden');
+            document.getElementById('all-done-msg').classList.remove('hidden');
+        } else {
+            document.getElementById('generate-btn').classList.remove('hidden');
+            document.getElementById('all-done-msg').classList.add('hidden');
+        }
+    }
+
+    function generateTopic() {
+        const uncompleted = topics.filter(t => !completedTopics.includes(t.id));
+        if (uncompleted.length === 0) return;
+
+        const randomIdx = Math.floor(Math.random() * uncompleted.length);
+        activeTopicId = uncompleted[randomIdx].id;
+        localStorage.setItem('math_active_topic', JSON.stringify(activeTopicId));
+        
+        showTopic(activeTopicId);
+    }
+
+    function showTopic(id) {
+        const topic = topics.find(t => t.id === id);
+        const tName = currentLang === 'bn' ? topic.bn : topic.en;
+        
+        document.getElementById('generate-btn').classList.add('hidden');
+        document.getElementById('topic-container').classList.remove('hidden');
+        document.getElementById('topic-text').innerText = `${id}. ${tName}`;
+    }
+
+    function markAsDone() {
+        if (activeTopicId && !completedTopics.includes(activeTopicId)) {
+            completedTopics.push(activeTopicId);
+            localStorage.setItem('math_completed', JSON.stringify(completedTopics));
+            activeTopicId = null;
+            localStorage.removeItem('math_active_topic');
+            
+            document.getElementById('topic-container').classList.add('hidden');
+            updateUI();
+        }
+    }
+
+    function resetProgress() {
+        if(confirm(currentLang === 'bn' ? "আপনি কি নিশ্চিত? সব প্রোগ্রেস মুছে যাবে।" : "Are you sure? All progress will be lost.")){
+            completedTopics = [];
+            activeTopicId = null;
+            localStorage.removeItem('math_completed');
+            localStorage.removeItem('math_active_topic');
+            document.getElementById('topic-container').classList.add('hidden');
+            updateUI();
+        }
+    }
+
+    // Register Service Worker for PWA
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('sw.js')
+        .then(() => console.log('Service Worker Registered'));
+    }
+
+    init();
+</script>
+</body>
+</html>

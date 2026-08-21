@@ -1,0 +1,16 @@
+{
+  "name": "Math Topics Tracker",
+  "short_name": "Math Tracker",
+  "description": "Daily mathematics topic tracker for 60 topics.",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#F4F7F6",
+  "theme_color": "#4A90E2",
+  "icons": [
+    {
+      "src": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48Y2lyY2xlIGN4PSI1MCIgY3k9IjUwIiByPSI1MCIgZmlsbD0iIzRBOTBFMiIvPjx0ZXh0IHg9IjI1IiB5PSI2NSIgZmlsbD0iI2ZmZiIgZm9udC1zaXplPSI0MCIgZm9udC1mYW1pbHk9InNhbnMtc2VyaWYiPiZwbHVzOzwvdGV4dD48L3N2Zz4=",
+      "sizes": "192x192",
+      "type": "image/svg+xml"
+    }
+  ]
+}
